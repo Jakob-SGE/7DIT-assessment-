@@ -1,5 +1,5 @@
 def main_menu():
-    gameplan = {"FC Bayern München" : {"date" : "12/09/2026", "demand" : "5"}}
+    gameplan = [{"Club" : "FC Bayern München", "date" : "12/09/2026", "demand" : "5"}]
     while True:
         print(f"{"EINTRACHT FRANKFURT TICKETING":.^60}")
         print("*" * 60)
@@ -19,27 +19,29 @@ def main_menu():
 
 def customer_menu(gameplan):
     print(f"{"UPCOMING GAMES":.^60}")
-    for clubs, details in gameplan.items():
-        print(f"{clubs} {details["date"]}")
-    while True:
-        option = input("Enter club or 0 to cancel")
-        if option == "0":
-            return
-        elif option in gameplan:
-            ticket_buy()
-        else:
-            print("Club not found in Gameplan, please enter again")
+    count = 1
+    for clubs in gameplan:
+        print(f"GAME {count} {clubs["Club"]} {clubs["date"]}")
+        count += 1 
+    option = int_input("Enter Game number: ", "Game not found, please try again", (0, len(gameplan)))
 
-    
-def ticket_buy():
-    print("1")
     
 
 def admin_menu(gameplan):
     print(f"{"ADMIN MENU":.^60}")
 
 
-
+def int_input(prompt, errormessage, range):
+    while True:
+        try:
+            num = int(input(prompt))
+            if num in range:
+                return num
+            else:
+                print(errormessage)
+        except ValueError:
+            print(errormessage)
+        
 
 
 
