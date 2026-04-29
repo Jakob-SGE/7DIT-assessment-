@@ -10,7 +10,9 @@ You should have the option between a digital and printed ticket
 Optional:
 Should have an option to search for seats that are next to each other for families
 """
+import random
 
+DAYS_IN_MONTHS = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
 STADIUM_TEMPLATE = {"NORDWESTKURVE" : {"capacity" : 30, "class" : "standing"},
                     "HAUPTTRIBUENE" : {"rows" : 2, "seats_per_row" : 8, "class" : "VIP"},
@@ -22,10 +24,17 @@ PRICE_LIST = {"standard" : [30, 40, 50, 60, 70],
               "standing" : [8, 8, 10, 12, 15]}
 
 
+SECTION_WEIGHTS = {
+    "standing": (18, 20),   
+    "standard": (15, 18),  
+    "VIP": (8, 12)         
+}
+
+
 
 def main_menu():
-    gameplan = [{"club" : "FC Bayern München", "date" : "12/09/2026", "demand" : 5},
-                {"club" : "TSG Hoffenheim", "date" : "26/09/2026", "demand" : 2}]
+    gameplan = [{"club" : "FC Bayern München", "date" : "12/09/2026", "demand" : 5, "seating" : generate_seating(5, STADIUM_TEMPLATE)},
+                {"club" : "TSG Hoffenheim", "date" : "26/09/2026", "demand" : 2, "seating" : generate_seating(2, STADIUM_TEMPLATE)}]
     while True:
         print(f"{"EINTRACHT FRANKFURT TICKETING":.^60}")
         print("*" * 60)
@@ -43,6 +52,29 @@ def main_menu():
             print("Option is not available, please try again")
 
 
+def generate_seating(demand, stadium):
+    game_seating = {}
+    for section, info in stadium.items():
+        min, max = SECTION_WEIGHTS[info["class"]]
+        fill_chance = random.randint(demand * min, demand * max) / 100
+        if info["class"] == "standing":
+            game_seating[section] = info["capacity"] * fill_chance
+        else:
+            game_seating[section] = get_seat_generation(fill_chance, info)
+    return game_seating
+
+
+def get_seat_generation(fill_chance, info):
+    layout = []
+    for r in range(info["rows"]):
+        row = []
+        for s in range(info["seats_per_row"]):
+            is_taken = random.random() < fill_chance
+            row.append(is_taken)
+        layout.append(row)
+    return layout
+
+
 def customer_menu(gameplan):
     print(f"{"UPCOMING GAMES":.^60}")
     count = 1
@@ -57,6 +89,7 @@ def customer_menu(gameplan):
 
 def ticket_buy(game, gameplan):
     print(f"{gameplan[game]["club"]}")
+    print(f"{gameplan[game]["seating"]}")
 
     
 def admin_menu(gameplan):
@@ -79,11 +112,25 @@ def admin_menu(gameplan):
 
 def add_new_game(gameplan):
     opponent =  string_input("Enter the opponent: ", "Name is too short, please try again")
-    year = int_input("Enter year of the game: ", "Year is not valid, please try again", range(2026, 2027))
-    month = int_input("Enter month of the game: ", "Month is not valid, please try again", range(1, 12))
-    day = int_input("Enter day of the game: ", "Day is not valid, please try again", range(1, 31))
+    date = get_game_date()
+    demand = int_input("Enter the demand level (1-5): ", "Invalid demand level, enter a number from 1 to 5", range(1, 6))
+    match = {"club" : {opponent}, "date" : {date}, "demand" : {demand}, "seating" : generate_seating(0, gameplan)}
+    gameplan.append(match)
 
 
+def get_game_date():
+    year = int_input("Enter year of the game: ", "Year is not valid, please try again", range(2026, 2028))
+    if year == 2026:
+        month_range = range(5, 13) 
+        month_error = "For 2026, please enter a month from May (5) onwards."
+    else:
+        month_range = range(1, 13)  
+        month_error = "Invalid month (1-12)."
+    month = int_input("Enter month of the gamee: ", month_error, month_range)
+    max_days = DAYS_IN_MONTHS[month]
+    day = int_input("Enter day of the game: ", "Day is not valid, please try again", range(1, max_days))
+    game_date = f"{day}/{month}/{year}"
+    return game_date
 
 
 def int_input(prompt, errormessage, range):
@@ -101,6 +148,7 @@ def int_input(prompt, errormessage, range):
 def count_to_index(count):
     count -= 1
     return count
+
 
 def string_input(prompt, errormessage):
     while True: 
