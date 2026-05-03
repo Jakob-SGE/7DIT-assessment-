@@ -81,9 +81,25 @@ def get_seat_generation(fill_chance, info):
 
 
 def customer_menu(gameplan):
-    display_gameplan(gameplan)
-    option = select_game(gameplan)
-    ticket_buy(option, gameplan)
+    shopping_cart = [] 
+    
+    while True:
+        print(f"{'CUSTOMER MENU':.^60}")
+        print(f"|{'OPTION 0':<10}{'Back to Main Menu':>50}|")
+        print(f"|{'OPTION 1':<10}{'Select a Game & Buy Tickets':>50}|")
+        print(f"|{'OPTION 2':<10}{f'Go to Checkout ({len(shopping_cart)} items)':>50}|")
+        print("*" * 60)
+        option = int_input("Enter option: ", "Invalid option, enter (0-2)", range(0, 3))
+        if option == "0":
+            break
+        elif option == "1":
+            display_gameplan(gameplan)
+            game = select_game(gameplan)
+            ticket_buy(game, gameplan, shopping_cart) 
+        elif option == "2":
+            checkout(shopping_cart)
+
+
 
 
 def select_game(gameplan):
@@ -99,37 +115,90 @@ def display_gameplan(gameplan):
     for clubs in gameplan:
         print(f"GAME {count} {clubs["club"]} {clubs["date"]}")
         count += 1 
+    print("")
 
 
-def ticket_buy(game, gameplan):
+def ticket_buy(game, gameplan, shopping_cart):
     while True:
         print(f"{"Stadium overview":.^60}")
         print(f"|{"Option 0":<10}{"cancel order":>50}|")
         print(f"|{"Option 1":<10}{"Juergen Grabowski Tribuene":>50}|")
         print(f"|{"OPTION 2":<10}{"Hauptribuene":>50}|")
         print(f"|{"OPTION 3":<10}{"Nordwestkurve":>50}|")
+        print("")
         option = int_input("Enter your preferred seating class: ", "Invalid option, Enter (1-3)", range(0, 4))
+        print("")
         if option == 0:
             break
         elif option == 1:
-            seat_ticket_buy(game, gameplan, "JUERGEN_GRABOWSKI_TRIBUENE")
+            seat_ticket_buy(game, gameplan, "JUERGEN_GRABOWSKI_TRIBUENE", "Juergen Grabowski Tribuene", shopping_cart)
         elif option == 2:
-            seat_ticket_buy(game, gameplan, "HAUPTTRIBUENE")
+            seat_ticket_buy(game, gameplan, "HAUPTTRIBUENE", "Haupttribuene", shopping_cart)
         elif option == 3: 
-            nwk_ticket_buy(game, gameplan)
+            nwk_ticket_buy(game, gameplan, shopping_cart)
 
 
-def seat_ticket_buy(game, gameplan, section):
-    display_free_seating(game, gameplan, section)
+def seat_ticket_buy(game, gameplan, section, section_name, shopping_cart):
+    display_free_seating(game, gameplan, section, section_name)
+    ordered_seats = []
+    while True:
+        seat = []
+        option = int_input("Enter 0 to stop ordering or enter the row: ", "Not a valid option, enter 0 or an existing row", range(0, len(gameplan[game]["seating"][section]) + 1))
+        if option == 0:
+            break 
+        seat.append(option)
+        seat_number = int_input("Enter the seat: ", "Not a valid seat number", range(0, len(gameplan[game]["seating"][section][option]) + 1))
+        seat.append(seat_number)
+        if gameplan[game]["seating"][section][count_to_index(option)][count_to_index(seat_number)] == False:
+            ordered_seats.append(seat)
+            print(f"Seat r{option}/s{seat_number} added to your order!")
+        else:
+            print("This seat is not free, please select another")
+    if len(ordered_seats) > 0:
+        print("SELECTED SEATS:")
+        for s in ordered_seats:
+            print(f"r{s[0]}/s{s[1]}")
+        confirmation = int_input("To add your order to the shopping cart enter 1, to cancel enter 0: ", "Not a valid option, enter (1 or 0)", range(0, 2))
+        if confirmation == 1:
+            for seat in ordered_seats:
+                gameplan[game]["seating"][section][count_to_index(seat[0])][count_to_index(seat[1])] = True
+            demand_index = count_to_index(gameplan[game]["demand"])
+            ticket_price = PRICE_LIST[STADIUM_TEMPLATE[section]["class"]][demand_index]
+            ticket_amount = len(ordered_seats)
+            price = ticket_price *  ticket_amount
+            order = {"game" : gameplan[game],
+                     "section" : section,
+                     "seats" : [ordered_seats],
+                     "price" : price
+            }
+        else:
+            print("Order has been canceled")
 
 
 
-def display_free_seating(game, gameplan, section):
     
 
 
 
-def nwk_ticket_buy(game, gameplan):
+def display_free_seating(game, gameplan, section, section_name):
+    print(f"{section_name}:")
+    row = 1
+    for r in gameplan[game]["seating"][section]:    
+        seat = 1
+        free_seats = []
+        for s in r:        
+            if s == False:
+                free_seats.append(f"r{row}/s{seat}:free")
+            else:
+                free_seats.append(f"r{row}/s{seat}:taken")
+            seat += 1
+        row += 1
+        print(" ".join(free_seats))
+    print("")
+
+
+
+def nwk_ticket_buy(game, gameplan, shopping_cart):
     free_tickets = STADIUM_TEMPLATE["NORDWESTKURVE"]["capacity"] - gameplan[game]["seating"]["NORDWESTKURVE"]
     print(f"There are {free_tickets} free tickets")
     if free_tickets > 0:
@@ -138,9 +207,16 @@ def nwk_ticket_buy(game, gameplan):
         ticket_price = PRICE_LIST["standing"][demand_level]
         price = ticket_number *  ticket_price
         print(f"{ticket_number} tickets in the Nordwestkurve will cost €{price:.2f}")
-        confirmation = int_input("To confirm your order enter 1, to cancel enter 0: ", "Not a valid option, enter (1 or 0)", range(0, 2))
+        order = {"game" : gameplan[game],
+                 "section" : "NORDWESTKURVE",
+                 "amount" : ticket_number,
+                 "price" : ticket_price
+        }
+        confirmation = int_input("To add your order to the shopping cart enter 1, to cancel enter 0: ", "Not a valid option, enter (1 or 0)", range(0, 2))
         if confirmation == 1:
-            print("Thank you for your order!")
+            gameplan[game]["seating"]["NORDWESTKURVE"] += ticket_number
+            print("Order has been added to the shopping cart")
+            shopping_cart.append(order)
         else:
             print("Order has been canceled")
 
