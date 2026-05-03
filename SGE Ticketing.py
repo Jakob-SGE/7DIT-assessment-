@@ -117,7 +117,7 @@ def checkout(shopping_cart):
     print(f"{"YOUR SHOPPING CART":^60}")
     for item in shopping_cart:
         if item["section"] == "NORDWESTKURVE":
-            print(f"VS {item["game"]} {item["ticket_amount"]} tickets for {item["price"]} in the Nordwestkurve")
+            print(f"VS {item["game"]} {item["amount"]} tickets for {item["price"]} in the Nordwestkurve")
         else:
             print(f"VS {item["game"]} {len(item["seats"])} tickets for {item["price"]}€ in the {item["section"]}") 
         total_price += item["price"]
@@ -215,9 +215,6 @@ def order_confirmation(ordered_seats, gameplan, game, section, section_name, sho
             gameplan[game]["seating"][section][count_to_index(seat[0])][count_to_index(seat[1])] = False
         print("Order has been canceled")
 
-    
-
-
 
 def display_seating(game, gameplan, section, section_name):
     """Displays the seating in a section for a specific game"""
@@ -266,7 +263,7 @@ def admin_menu(gameplan):
     while True:
         print(f"{"ADMIN MENU":.^60}")
         print("*" * 60)
-        print(f"|{"OPTION 0":<10}{"Stop the program":>50}|")
+        print(f"|{"OPTION 0":<10}{"Go back to main menu":>50}|")
         print(f"|{"OPTION 1":<10}{"Add a new game":>50}|")
         print(f"|{"OPTION 2":<10}{"Modify demand/prices":>50}|")
         option = input("Enter option: ")
