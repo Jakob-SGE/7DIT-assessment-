@@ -117,9 +117,9 @@ def checkout(shopping_cart):
     print(f"{"YOUR SHOPPING CART":^60}")
     for item in shopping_cart:
         if item["section"] == "NORDWESTKURVE":
-            print(f"VS {item["game"]} {item["amount"]} tickets for {item["price"]} in the Nordwestkurve")
+            print(f"VS {item["game"]} {item["amount"]} tickets for {item["price"]}€ in the Nordwestkurve")
         else:
-            print(f"VS {item["game"]} {len(item["seats"])} tickets for {item["price"]}€ in the {item["section"]}") 
+            print(f"VS {item["game"]} {len(item["seats"])} tickets for {item["price"]}€ in the {item["section_name"]}") 
         total_price += item["price"]
     print(f"\n{"GRAND TOTAL:":<15} {total_price}€")
     confirmation = int_input("\nEnter 1 to confirm purchase, 0 to cancel order: ", "Invalid option (1 or 0)", range(0, 2))
@@ -204,10 +204,11 @@ def order_confirmation(ordered_seats, gameplan, game, section, section_name, sho
         ticket_amount = len(ordered_seats)
         price = ticket_price *  ticket_amount
         order = {"game" : gameplan[game]["club"],
-                    "section" : section_name,
+                    "section_name" : section_name,
                     "seats" : ordered_seats,
                     "price" : price,
-                    "game_index" : game
+                    "game_index" : game,
+                    "section" : section
         }
         shopping_cart.append(order)
     else:
@@ -239,7 +240,9 @@ def nwk_ticket_buy(game, gameplan, shopping_cart):
     free_tickets = STADIUM_TEMPLATE["NORDWESTKURVE"]["capacity"] - gameplan[game]["seating"]["NORDWESTKURVE"]
     print(f"There are {free_tickets} free tickets")
     if free_tickets > 0:
-        ticket_number = int_input("How many tickets would you like to buy: ", f"Not a valid amount of tickets, there are only {free_tickets} left", range(1, free_tickets + 1))
+        ticket_number = int_input("How many tickets would you like to buy: ", f"Not a valid amount of tickets, there are only {free_tickets} left", range(0, free_tickets + 1))
+        if ticket_number == 0:
+            return
         demand_level = count_to_index(gameplan[game]["demand"])
         ticket_price = PRICE_LIST["standing"][demand_level]
         price = ticket_number *  ticket_price
