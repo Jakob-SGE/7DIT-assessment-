@@ -1,17 +1,3 @@
-"""
-Should include at least the next 5 games
-Should have different prices for the different areas and blocks
-At least 4 different areas
-Should include an option to book a parking or train ticket with it
-Should have different prices depending on the opponent and competition, the demand level can be modified by the operator, the different levels of demand dictate prices
-The seat options should be organized by block, area, price and suitability (family, business, hardcore fan)
-After the order information has been displayed the program should be ready to accept another order or end. 
-You should have the option between a digital and printed ticket
-Optional:
-Should have an option to search for seats that are next to each other for families
-"""
-
-
 import random
 
 
@@ -31,25 +17,27 @@ PRICE_LIST = {"standard" : [30, 40, 50, 60, 70],
 SECTION_WEIGHTS = {
     "standing": (18, 20),   
     "standard": (15, 18),  
-    "VIP": (8, 12)         
-}
-
+    "VIP": (8, 12)}
 
 
 def main_menu():
     gameplan = [{"club" : "FC Bayern München", "date" : "12/09/2026", "demand" : 5, "seating" : generate_seating(5, STADIUM_TEMPLATE)},
-                {"club" : "TSG Hoffenheim", "date" : "26/09/2026", "demand" : 2, "seating" : generate_seating(2, STADIUM_TEMPLATE)}]
+                {"club" : "TSG Hoffenheim", "date" : "26/09/2026", "demand" : 2, "seating" : generate_seating(2, STADIUM_TEMPLATE)},
+                {"club" : "Hamburger SV", "date" : "5/10/2026", "demand" : 3, "seating" : generate_seating(3, STADIUM_TEMPLATE)},
+                {"club" : "Borussia Dortmund", "date" : "14/10/2026", "demand" : 5, "seating" : generate_seating(5, STADIUM_TEMPLATE)},
+                {"club" : "1. FC Heidenheim", "date" : "28/10/2026", "demand" : 1, "seating" : generate_seating(1, STADIUM_TEMPLATE)}]
+    shopping_cart = [] 
     while True:
         print(f"{"EINTRACHT FRANKFURT TICKETING":.^60}")
         print("*" * 60)
         print(f"|{"OPTION 0":<10}{"Stop the program":>50}|")
-        print(f"|{"OPTION 1":<10}{"Sell Tickets":>50}|")
-        print(f"|{"OPTION 2":<10}{"Modify Program":>50}|")
+        print(f"|{"OPTION 1":<10}{"Customer Area":>50}|")
+        print(f"|{"OPTION 2":<10}{"Admin Area":>50}|")
         option = input("Enter option: ")
         if option == "0":
             break
         elif option == "1":
-            customer_menu(gameplan)
+            customer_menu(gameplan, shopping_cart)
         elif option == "2":
             admin_menu(gameplan)
         else:
@@ -80,30 +68,64 @@ def get_seat_generation(fill_chance, info):
     return layout
 
 
-def customer_menu(gameplan):
-    shopping_cart = [] 
-    
+def customer_menu(gameplan, shopping_cart):
     while True:
-        print(f"{'CUSTOMER MENU':.^60}")
-        print(f"|{'OPTION 0':<10}{'Back to Main Menu':>50}|")
-        print(f"|{'OPTION 1':<10}{'Select a Game & Buy Tickets':>50}|")
-        print(f"|{'OPTION 2':<10}{f'Go to Checkout ({len(shopping_cart)} items)':>50}|")
+        print(f"{"CUSTOMER MENU":.^60}")
+        print(f"|{"OPTION 0":<10}{"Back to Main Menu":>50}|")
+        print(f"|{"OPTION 1":<10}{"Select a Game & Buy Tickets":>50}|")
+        print(f"|{"OPTION 2":<10}{f"Go to Checkout":>50}|")
+        print(f"|{"OPTION 3":<10}{f"Clear Shopping cart":>50}|")
         print("*" * 60)
-        option = int_input("Enter option: ", "Invalid option, enter (0-2)", range(0, 3))
-        if option == "0":
+        option = int_input("\nEnter option: ", "Invalid option, enter (0-3)", range(0, 4))
+        if option == 0:
             break
-        elif option == "1":
+        elif option == 1:
             display_gameplan(gameplan)
             game = select_game(gameplan)
             ticket_buy(game, gameplan, shopping_cart) 
-        elif option == "2":
+        elif option == 2:
             checkout(shopping_cart)
+        elif option == 3:
+            clear_shopping_cart(shopping_cart, gameplan)
 
 
+def clear_shopping_cart(shopping_cart, gameplan):
+    if not shopping_cart:
+        print("\nShopping cart is empty\n")
+        return
+    for item in shopping_cart:
+        if item["section"] == "NORDWESTKURVE":
+            gameplan[item["game_index"]]["seating"]["NORDWESTKURVE"] -= item["amount"]
+        else:
+            for seat in item["seats"]:
+                gameplan[item["game_index"]]["seating"][item["section"]][count_to_index(seat[0])][count_to_index(seat[1])] = False
+    shopping_cart.clear()
+    print("\nSHOPPING CART CLEARED\n")  
 
 
+def checkout(shopping_cart):
+    if not shopping_cart:
+        print("\nShopping cart is empty\n")
+        return
+    total_price = 0
+    print(f"{"YOUR SHOPPING CART":^60}")
+    for item in shopping_cart:
+        if item["section"] == "NORDWESTKURVE":
+            print(f"VS {item["game"]} {item["ticket_amount"]} tickets for {item["price"]} in the Nordwestkurve")
+        else:
+            print(f"VS {item["game"]} {len(item["seats"])} tickets for {item["price"]}€ in the {item["section"]}") 
+        total_price += item["price"]
+    print(f"\n{"GRAND TOTAL:":<15} {total_price}€")
+    confirmation = int_input("\nEnter 1 to confirm purchase, 0 to cancel order: ", "Invalid option (1 or 0)", range(0, 2))
+    if confirmation == 1:
+        print("\nPURCHASE CONFIRMED!\n")
+        shopping_cart.clear() 
+    else:
+        print("\nCheckout canceled. Items are still in your cart.\n")
+
+       
 def select_game(gameplan):
-    option = int_input("Enter Game number: ", "Game not found, please try again", range(1, len(gameplan) + 1))
+    option = int_input("\nEnter Game number: ", "Game not found, please try again", range(1, len(gameplan) + 1))
     option = count_to_index(option)
     print(f"Game vs {gameplan[option]["club"]} on the {gameplan[option]["date"]}") 
     return option
@@ -120,14 +142,12 @@ def display_gameplan(gameplan):
 
 def ticket_buy(game, gameplan, shopping_cart):
     while True:
-        print(f"{"Stadium overview":.^60}")
-        print(f"|{"Option 0":<10}{"cancel order":>50}|")
+        print(f"{f"\nStadium overview vs {gameplan[game]["club"]}":.^60}")
+        print(f"|{"Option 0":<10}{"Back to customer Menu":>50}|")
         print(f"|{"Option 1":<10}{"Juergen Grabowski Tribuene":>50}|")
         print(f"|{"OPTION 2":<10}{"Hauptribuene":>50}|")
         print(f"|{"OPTION 3":<10}{"Nordwestkurve":>50}|")
-        print("")
-        option = int_input("Enter your preferred seating class: ", "Invalid option, Enter (1-3)", range(0, 4))
-        print("")
+        option = int_input("\nEnter your preferred seating class: ", "Invalid option, Enter (1-3)", range(0, 4))
         if option == 0:
             break
         elif option == 1:
@@ -147,34 +167,42 @@ def seat_ticket_buy(game, gameplan, section, section_name, shopping_cart):
         if option == 0:
             break 
         seat.append(option)
-        seat_number = int_input("Enter the seat: ", "Not a valid seat number", range(0, len(gameplan[game]["seating"][section][option]) + 1))
+        row_idx = count_to_index(option)
+        seat_number = int_input("Enter the seat: ", "Not a valid seat number", range(0, len(gameplan[game]["seating"][section][row_idx]) + 1))
+        seat_idx = count_to_index(seat_number)
         seat.append(seat_number)
-        if gameplan[game]["seating"][section][count_to_index(option)][count_to_index(seat_number)] == False:
+        if not gameplan[game]["seating"][section][row_idx][seat_idx]:
+            gameplan[game]["seating"][section][row_idx][seat_idx] = True
             ordered_seats.append(seat)
             print(f"Seat r{option}/s{seat_number} added to your order!")
         else:
             print("This seat is not free, please select another")
     if len(ordered_seats) > 0:
-        print("SELECTED SEATS:")
-        for s in ordered_seats:
-            print(f"r{s[0]}/s{s[1]}")
-        confirmation = int_input("To add your order to the shopping cart enter 1, to cancel enter 0: ", "Not a valid option, enter (1 or 0)", range(0, 2))
-        if confirmation == 1:
-            for seat in ordered_seats:
-                gameplan[game]["seating"][section][count_to_index(seat[0])][count_to_index(seat[1])] = True
-            demand_index = count_to_index(gameplan[game]["demand"])
-            ticket_price = PRICE_LIST[STADIUM_TEMPLATE[section]["class"]][demand_index]
-            ticket_amount = len(ordered_seats)
-            price = ticket_price *  ticket_amount
-            order = {"game" : gameplan[game],
-                     "section" : section,
-                     "seats" : [ordered_seats],
-                     "price" : price
-            }
-        else:
-            print("Order has been canceled")
+        order_confirmation(ordered_seats, gameplan, game, section, section_name, shopping_cart)
 
 
+
+def order_confirmation(ordered_seats, gameplan, game, section, section_name, shopping_cart):
+    print("\nSELECTED SEATS:")
+    for s in ordered_seats:
+        print(f"r{s[0]}/s{s[1]}")
+    confirmation = int_input("\nTo add your order to the shopping cart enter 1, to cancel enter 0: ", "Not a valid option, enter (1 or 0)", range(0, 2))
+    if confirmation == 1:
+        demand_index = count_to_index(gameplan[game]["demand"])
+        ticket_price = PRICE_LIST[STADIUM_TEMPLATE[section]["class"]][demand_index]
+        ticket_amount = len(ordered_seats)
+        price = ticket_price *  ticket_amount
+        order = {"game" : gameplan[game]["club"],
+                    "section" : section_name,
+                    "seats" : ordered_seats,
+                    "price" : price,
+                    "game_index" : game
+        }
+        shopping_cart.append(order)
+    else:
+        for seat in ordered_seats:
+            gameplan[game]["seating"][section][count_to_index(seat[0])][count_to_index(seat[1])] = False
+        print("Order has been canceled")
 
     
 
@@ -182,18 +210,17 @@ def seat_ticket_buy(game, gameplan, section, section_name, shopping_cart):
 
 def display_free_seating(game, gameplan, section, section_name):
     print(f"{section_name}:")
+    print("Legend: [ ] = Free | [X] = Taken\n")
     row = 1
     for r in gameplan[game]["seating"][section]:    
-        seat = 1
-        free_seats = []
+        seating = [f"Row {row}:"]
         for s in r:        
-            if s == False:
-                free_seats.append(f"r{row}/s{seat}:free")
+            if not s:
+                seating.append("[ ]")
             else:
-                free_seats.append(f"r{row}/s{seat}:taken")
-            seat += 1
+                seating.append("[X]")
         row += 1
-        print(" ".join(free_seats))
+        print(" ".join(seating))
     print("")
 
 
@@ -207,10 +234,11 @@ def nwk_ticket_buy(game, gameplan, shopping_cart):
         ticket_price = PRICE_LIST["standing"][demand_level]
         price = ticket_number *  ticket_price
         print(f"{ticket_number} tickets in the Nordwestkurve will cost €{price:.2f}")
-        order = {"game" : gameplan[game],
+        order = {"game" : gameplan[game]["club"],
                  "section" : "NORDWESTKURVE",
                  "amount" : ticket_number,
-                 "price" : ticket_price
+                 "price" : price,
+                 "game_index" : game
         }
         confirmation = int_input("To add your order to the shopping cart enter 1, to cancel enter 0: ", "Not a valid option, enter (1 or 0)", range(0, 2))
         if confirmation == 1:
@@ -252,7 +280,7 @@ def add_new_game(gameplan):
     demand = demand_input()
     match = {"club" : opponent, "date" : date, "demand" : demand, "seating" : generate_seating(0, STADIUM_TEMPLATE)}
     gameplan.append(match)
-    print(gameplan)
+    print(f"\nGame vs {opponent} on {date} has been added\n")
 
 
 def demand_input():
@@ -268,18 +296,18 @@ def get_game_date():
     else:
         month_range = range(1, 13)  
         month_error = "Invalid month (1-12)."
-    month = int_input("Enter month of the gamee: ", month_error, month_range)
+    month = int_input("Enter month of the game: ", month_error, month_range)
     max_days = DAYS_IN_MONTHS[month] + 1
     day = int_input("Enter day of the game: ", "Day is not valid, please try again", range(1, max_days))
-    game_date = f"{day}/{month}/{year}"
+    game_date = f"{day:02d}/{month:02d}/{year}"
     return game_date
 
 
-def int_input(prompt, errormessage, range):
+def int_input(prompt, errormessage, valid_range):
     while True:
         try:
             num = int(input(prompt))
-            if num in range:
+            if num in valid_range:
                 return num
             else:
                 print(errormessage)
